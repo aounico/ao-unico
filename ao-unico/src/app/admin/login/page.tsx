@@ -12,7 +12,7 @@ export default function Login() {
     const { error } = await supabaseBrowser().auth.signInWithPassword({
       email: String(f.get('email')), password: String(f.get('senha')),
     })
-    if (error) return setErro('E-mail ou senha incorretos.')
+    if (error) return setErro('Erro: ' + error.message)
     router.push('/admin'); router.refresh()
   }
   const campo = 'w-full border border-black p-3 text-base'
