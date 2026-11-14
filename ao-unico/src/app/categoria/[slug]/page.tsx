@@ -39,7 +39,7 @@ export default async function CategoriaPage({
 
   const capa = (p: any): string | null => {
     const imgs = (p.product_media ?? [])
-      .filter((m: any) => m.kind === 'image')
+      .filter((m: any) => !m.kind || m.kind === 'image')
       .sort((a: any, b: any) => a.position - b.position)
     return imgs[0]?.url ?? null
   }
