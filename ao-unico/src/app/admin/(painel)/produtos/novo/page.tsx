@@ -9,9 +9,11 @@ async function criar(f: FormData) {
   if (!user) redirect('/admin/login')
   const nome = String(f.get('nome')).trim()
   const slug = slugify(nome)
+  const categoria = String(f.get('categoria') ?? '')
   const { data: p, error } = await sb.from('products').insert({
     name: nome, slug, description: String(f.get('descricao')),
     price: Number(f.get('preco')), status: f.get('publicar') ? 'published' : 'draft',
+    category_id: categoria || null,
   }).select('id').single()
   if (error || !p) throw new Error(error?.message ?? 'Erro ao salvar')
 
@@ -33,14 +35,41 @@ async function criar(f: FormData) {
   redirect('/admin')
 }
 
-export default function NovoProduto() {
+export default async function NovoProduto() {
   const campo = 'w-full border border-black p-3 text-base'
+
+  const { data } = await supabaseServer()
+    .from('categories')
+    .select('id,name,parent_id,position')
+    .order('position')
+  const cats: any[] = data ?? []
+  const topo = cats.filter((c) => !c.parent_id)
+
   return (
     <form action={criar} className="grid max-w-xl gap-3">
       <h1 className="text-3xl font-black uppercase">Novo produto</h1>
       <input name="nome" placeholder="Nome do produto" required className={campo} />
       <textarea name="descricao" placeholder="Descrição" rows={4} className={campo} />
       <input name="preco" type="number" step="0.01" min="0" placeholder="Preço (ex.: 79.90)" required className={campo} />
+
+      <label className="font-semibold">Categoria
+        <select name="categoria" required className={`${campo} mt-1 bg-white`}>
+          <option value="">Escolha uma categoria</option>
+          {topo.map((pai) => {
+            const filhas = cats.filter((c) => c.parent_id === pai.id)
+            return filhas.length > 0 ? (
+              <optgroup key={pai.id} label={pai.name}>
+                {filhas.map((f) => (
+                  <option key={f.id} value={f.id}>{pai.name} › {f.name}</option>
+                ))}
+              </optgroup>
+            ) : (
+              <option key={pai.id} value={pai.id}>{pai.name}</option>
+            )
+          })}
+        </select>
+      </label>
+
       <label className="font-semibold">Variações (uma por linha: tamanho, cor, estoque)
         <textarea name="variacoes" rows={4} placeholder={'P, Preto, 10\nM, Preto, 8\nÚnico, Branco, 5'} className={campo} />
       </label>
